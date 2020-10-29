@@ -1,0 +1,140 @@
+## Notes for "Temporal Constraint Networks"
+
+Related papers:
+1. (Allen's interval algebra) Allen, James F. "Maintaining knowledge about temporal intervals." Communications of the ACM 26.11 (1983): 832-843.
+2. (Point algebra) Vilain, Marc B., and Henry A. Kautz. "Constraint propagation algorithms for temporal reasoning." Aaai. Vol. 86. 1986.
+3. (Linear inequalities) Malik, Jitendra, and Thomas O. Binford. "Reasoning in Time and Space." IJCAI. Vol. 83. 1983.
+4. (Linear inequalities) Valdes-Perez, Raul E. "Spatio-temporal reasoning and linear inequalities." (1986).
+5. (Time map) Dean, Thomas L., and Drew V. McDermott. "Temporal data base management." Artificial intelligence 32.1 (1987): 1-55.
+
+
+### TCSP Model
+TCSP-*Temporal constraint satisfaction problem* is CSP that contains variables $\{X_1\cdots X_n\}$ and constraints where each constraint is a set of intervals $\{\cdots,I_k,\cdots\}=\{\cdots,[a_k,b_k],\cdots\}$
+
+Two types of constraints:
+1. unary: $(a_1\leq X_i\leq b_i)\vee \cdots \vee (a_n\leq X_i\leq b_n)$
+2. binary: $(a_1\leq X_j-X_i\leq b_i)\vee \cdots \vee (a_n\leq X_j-X_i\leq b_n)$
+
+Can treat all constraints as binary constraints by adding a reference point $X_0$
+
+**Solution**: tuple $\mathcal{X}=\{x_1\cdots x_n\}$ satisifies all the constraints.
+
+v is a **feasible value** for $X_i$ if exists a solution in which $X_i=v$.
+
+**Minimal domain**: All feasible values of a variable.
+
+Network is **consistent** if at least one solution exists.
+
+
+Set operations ($T=\{I_1,\cdots I_l\}$, $S=\{J_1,\cdots J_m\}$): 
+1. *union*: $T\cup S=\{I_1,\cdots,I_l,J_1,\cdots J_m\}$
+2. *intersection*: $T\oplus U=\{K|K=I_i\cap J_j, \forall i,j\}$
+3. *composition*: $T\otimes U=\{K|K=[a+c,b+d], \forall I_i=[a,b],\,J_l=[c,d]\}$
+
+**Network level:**
+1. **Partial order**: $T\subseteq S$ if all constraints meet $T_{ij}\subseteq S_{ij}$( for every interval $J\in S_{ij}$, there exist $I\in T_{ij}$, such that $I\subseteq J$ (which means $T_{ij}$ is tighter than $S_{ij}$)).
+2. Two networks are **equivalent** if they represent the same solution set.
+3. **Minimal network**: the one with respect to $\subseteq$ from all equivalent representations of a network.
+4. A network is **decomposable** if every locally consistent assignment to any set of variables can be extended to a solution.
+
+### Simple Temporal Problem (STP)
+> Definition: all constraints specify a single interval.
+
+**Distance graph**: Associate an STP with a directed edge-weighted graph $G_d=(V,E_d)$
+
+Denote $d_ij$ the length of the shortest path from $i$ to $j$.
+
+**Theorem 3.1** STP is consistent iff its distance graph has no negative cycles.
+
+**Corollary 3.2.** For STP with graph $G_d$, two consistent scenarios are $S_1=(d_{01},\cdots,d_{0n})$ and $S_2=(-d_{10},\cdots,-d_{n0})$ which assign to each variable its latest and earliest possible time.
+
+**A given STP can be specified by a complete directed graph, called d-graph, where each edge $i\to j$ is labeled by the shortest path length $d_{ij}$ in $G_d$.**
+
+
+**Theorem 3.3** Any consistent STP is decomposable relative to the constraints in its d-graph.
+
+**Corollary 3.4.** For STP with graph $G_d$, the set of feasible values for variable $X_i$ is $[-d_{i0}, d_{0i}]$
+
+**Corollary 3.5.** For a STP $T$, the graph defined by $M_{ij}=\{[-d_{ji},d_{ij}]\}$ is the minimal network representation for $T$.
+
+**d-graph of an STP can be constructed by applying Floyd-Warshall's all-pairs-shortest-paths algorithm to the distance graph. (it can also check consistency, by examining the sign of the diagonal elements $d_{ii}$)** Time complexity $O(n^3)$. Once the d-graph is ready, finding a solution requires $O(n^2)$ time.
+
+
+**(TODO)Still not clear how to find a solution and why it's $O(n^2)$**
+
+
+### The general TCSP
+> Edges may be labeled by several intervals
+
+Deciding consistency of TCSP is NP-Hard
+
+One **naive** way to solve TCSP is to decompose it into several STPs, solve each, and combine the result.
+
+The "Backtrack" algorithm (recursively Forward and Go-back) is in Fig-5
+
+But this one too expensive- $O(n^3k^e)$ (n nodes, k intervals for each constraint)
+
+
+
+
+
+
+
+### Paths consistency algorithms
+> An approximation method, or say preprocessing, by finding path-consistent network
+
+**Path-Consistency**
+
+PC-1, similar to Montanari's path consistency algorithm (shown in Fig6)
+
+**Path Consist Network?=>Minimal Network**: True for STP due to distributivity holds, but does not hold for TCSP
+
+Path-consistent cannot detect inconsistency.
+
+PC-2 (more efficient, Fig-8)
+
+For discrete CSPs, PC-2 achieves path consistency in $O(n^3R^3)$, where $R$ is the maximum range of any constraint (in coarest units).
+
+**Directional path consistency** - a weaker version of path consistency. (more efficient)
+
+
+For TCSP, directional path consistency can be acheived by algorithm DPC (single-pass comparing to PC-1).
+
+induced-graph
+
+DPC Complexity: $O(nW^*(d)^2)$, where $W^*(d)$ is the maximum number of parents a node has in the induced-graph.
+
+
+
+
+### Network-based algorithms
+> The topological features of the constraint network may guide to select efficient solution methods, lower complexity than naive backtracking.
+
+
+*series-parallel networks* (equiv. to *regualr width-2 networks*)
+
+
+This network can yield a backtrack-free solution.
+
+
+
+Decomposition into nonseparable components: First find the nonseparable components, then solve each of them independently. If all components are consistent, then the entire network is consistent, and minimal networks of components coincide with the overall minimal network.
+
+### Summary
+1. STP and general TCSP (multi-interval constraint per node)
+2. STP is solved in polynomial time using FloydWarshall
+3. TCSP is solved by decomposition to STP, but not an efficient algorithm.
+4. Use path-consistency as preprocessing
+5. Decomposing nonseparable components was found applicable to TCSP
+
+
+
+
+
+
+
+# Notes for "Reformulating Temporal Plans For Efficient Execution"
+
+
+Temporal Plan: <G,T,A>, where G is an STN, T is a set of tasks, and A is from a set of association  tuples defined on the nodes of G and on the tasks of T (e.g. "begin", "end")
+
